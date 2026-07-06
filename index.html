@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedFlow — Hospital Management System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12232E;
+    --bg:#EEF2F1;
+    --surface:#FFFFFF;
+    --teal:#1F6F6B;
+    --teal-dark:#14514D;
+    --sage:#8FB9A8;
+    --coral:#E1584B;
+    --amber:#C98A2C;
+    --slate:#5C6B73;
+    --border:#D9E1DF;
+    --shadow: 0 1px 2px rgba(18,35,46,0.06), 0 4px 14px rgba(18,35,46,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--ink);}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{width:220px;flex-shrink:0;background:var(--ink);color:#EAF1EF;display:flex;flex-direction:column;padding:20px 0;}
+  .brand{padding:0 20px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:12px;}
+  .brand .display{font-size:20px;font-weight:700;letter-spacing:-0.02em;}
+  .brand .tag{font-size:11px;color:#9FB3AE;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:14px;color:#C9D6D3;border-left:3px solid transparent;transition:background .15s;}
+  .nav-item:hover{background:rgba(255,255,255,0.05);}
+  .nav-item.active{background:rgba(255,255,255,0.07);color:#fff;border-left-color:var(--dot,#8FB9A8);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,#8FB9A8);flex-shrink:0;}
+  .sidebar-foot{margin-top:auto;padding:14px 20px 0 20px;font-size:11px;color:#7C918C;font-family:'IBM Plex Mono',monospace;border-top:1px solid rgba(255,255,255,0.08);}
+
+  /* Main */
+  .main{flex:1;padding:28px 34px;overflow-x:hidden;}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;}
+  .page-head h1{font-size:24px;margin:0 0 4px 0;}
+  .page-head p{margin:0;color:var(--slate);font-size:13px;}
+  .btn{background:var(--teal);color:#fff;border:none;padding:9px 16px;border-radius:7px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:background .15s;}
+  .btn:hover{background:var(--teal-dark);}
+  .btn.ghost{background:transparent;color:var(--teal);border:1px solid var(--teal);}
+  .btn.ghost:hover{background:rgba(31,111,107,0.07);}
+  .btn.small{padding:5px 10px;font-size:12px;border-radius:5px;}
+  .btn.danger{background:var(--coral);}
+
+  .grid{display:grid;gap:16px;}
+  .stat-row{grid-template-columns:repeat(4,1fr);margin-bottom:20px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);}
+  .stat-card .label{font-size:12px;color:var(--slate);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.04em;}
+  .stat-card .value{font-size:28px;font-weight:700;font-family:'Space Grotesk',sans-serif;}
+  .stat-card .sub{font-size:12px;color:var(--sage);margin-top:4px;}
+
+  /* Vitals strip - signature element */
+  .vitals-strip{background:var(--ink);border-radius:10px;padding:16px 22px;margin-bottom:22px;display:flex;align-items:center;gap:28px;overflow:hidden;position:relative;}
+  .vitals-line-wrap{flex:1;height:40px;position:relative;overflow:hidden;}
+  .vitals-line-wrap svg{position:absolute;top:0;left:0;height:100%;width:200%;animation:scrollLine 4s linear infinite;}
+  @keyframes scrollLine{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .vital-metric{color:#EAF1EF;text-align:left;flex-shrink:0;}
+  .vital-metric .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;color:#8FE0C8;}
+  .vital-metric .l{font-size:10px;color:#8CA39D;text-transform:uppercase;letter-spacing:.06em;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate);font-family:'IBM Plex Mono',monospace;border-bottom:1px solid var(--border);}
+  td{padding:11px 12px;border-bottom:1px solid #EDF1F0;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#FAFBFA;}
+  .id-tag{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate);}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+  .badge.green{background:#E4F3ED;color:var(--teal-dark);}
+  .badge.amber{background:#FBF0DD;color:var(--amber);}
+  .badge.red{background:#FBE7E4;color:var(--coral);}
+  .badge.gray{background:#EAEEED;color:var(--slate);}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;}
+  .toolbar input[type=text],.toolbar input[type=search]{padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:240px;}
+  .toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:#fff;}
+
+  .wards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+  .ward-card h3{margin:0 0 2px 0;font-size:15px;}
+  .ward-card .ward-sub{font-size:12px;color:var(--slate);margin-bottom:12px;}
+  .beds-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+  .bed{aspect-ratio:1;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:500;cursor:pointer;border:1px solid transparent;}
+  .bed.available{background:#E4F3ED;color:var(--teal-dark);}
+  .bed.occupied{background:var(--coral);color:#fff;}
+  .bed.cleaning{background:#FBF0DD;color:var(--amber);}
+  .bed:hover{border-color:var(--ink);}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--slate);}
+  .empty-state .display{font-size:16px;color:var(--ink);margin-bottom:6px;}
+
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(18,35,46,0.45);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-backdrop.open{display:flex;}
+  .modal{background:#fff;border-radius:12px;padding:24px 26px;width:420px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+  .modal h2{margin:0 0 16px 0;font-size:18px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;color:var(--slate);margin-bottom:5px;font-weight:500;}
+  .field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+
+  .tabs-row{display:flex;gap:6px;margin-bottom:16px;}
+  .tab-pill{padding:6px 14px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:#fff;color:var(--slate);}
+  .tab-pill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#C7D2CF;border-radius:5px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="display">MedFlow</div>
+      <div class="tag">St. Aurelius General &middot; HMS v1</div>
+    </div>
+    <div id="nav"></div>
+    <div class="sidebar-foot">SESSION DATA &middot; RESETS ON REFRESH</div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+let idSeq = 1000;
+const nextId = (p) => p + (idSeq++);
+
+const departments = ["Cardiology","Orthopedics","Pediatrics","General Medicine","Neurology","Maternity"];
+
+let doctors = [
+  {id:'DR-201', name:'Dr. Amara Boateng', specialty:'Cardiology', department:'Cardiology', status:'Available'},
+  {id:'DR-202', name:'Dr. Kwesi Owusu', specialty:'Orthopedic Surgeon', department:'Orthopedics', status:'In Surgery'},
+  {id:'DR-203', name:'Dr. Linda Mensah', specialty:'Pediatrician', department:'Pediatrics', status:'Available'},
+  {id:'DR-204', name:'Dr. Samuel Tetteh', specialty:'General Physician', department:'General Medicine', status:'Off Duty'},
+  {id:'DR-205', name:'Dr. Efua Asante', specialty:'Neurologist', department:'Neurology', status:'Available'},
+  {id:'DR-206', name:'Dr. Naa Adjei', specialty:'Obstetrician', department:'Maternity', status:'Available'},
+];
+
+let patients = [
+  {id:'PT-1001', name:'Kojo Antwi', age:54, gender:'Male', contact:'024-100-2211', condition:'Hypertension', admitted:true, wardId:'W1', bedId:'W1-2', doctorId:'DR-201'},
+  {id:'PT-1002', name:'Abena Osei', age:7, gender:'Female', contact:'020-441-8890', condition:'Fever & Dehydration', admitted:true, wardId:'W3', bedId:'W3-1', doctorId:'DR-203'},
+  {id:'PT-1003', name:'Yaw Darko', age:33, gender:'Male', contact:'050-772-1290', condition:'Fractured Tibia', admitted:true, wardId:'W2', bedId:'W2-3', doctorId:'DR-202'},
+  {id:'PT-1004', name:'Efia Boateng', age:29, gender:'Female', contact:'027-654-0098', condition:'Prenatal Checkup', admitted:false, wardId:null, bedId:null, doctorId:'DR-206'},
+  {id:'PT-1005', name:'Nana Yeboah', age:61, gender:'Male', contact:'024-908-3345', condition:'Migraine Evaluation', admitted:false, wardId:null, bedId:null, doctorId:'DR-205'},
+  {id:'PT-1006', name:'Adjoa Frimpong', age:45, gender:'Female', contact:'055-321-6674', condition:'Post-op Recovery', admitted:true, wardId:'W1', bedId:'W1-4', doctorId:'DR-201'},
+];
+
+let wards = [
+  {id:'W1', name:'Cardiac Ward', type:'Cardiology', color:'#1F6F6B', bedCount:6},
+  {id:'W2', name:'Orthopedic Ward', type:'Orthopedics', color:'#C98A2C', bedCount:6},
+  {id:'W3', name:'Pediatric Ward', type:'Pediatrics', color:'#8FB9A8', bedCount:6},
+  {id:'W4', name:'Maternity Ward', type:'Maternity', color:'#E1584B', bedCount:6},
+];
+
+let beds = [];
+wards.forEach(w=>{
+  for(let i=1;i<=w.bedCount;i++){
+    const bedId = `${w.id}-${i}`;
+    const patient = patients.find(p=>p.bedId===bedId);
+    beds.push({id:bedId, wardId:w.id, number:i, status: patient? 'occupied' : (Math.random()<0.15?'cleaning':'available'), patientId: patient? patient.id : null});
+  }
+});
+
+let appointments = [
+  {id:'AP-501', patientId:'PT-1004', doctorId:'DR-206', date:'2026-07-07', time:'09:30', department:'Maternity', status:'Scheduled'},
+  {id:'AP-502', patientId:'PT-1005', doctorId:'DR-205', date:'2026-07-07', time:'11:00', department:'Neurology', status:'Scheduled'},
+  {id:'AP-503', patientId:'PT-1001', doctorId:'DR-201', date:'2026-07-06', time:'14:00', department:'Cardiology', status:'Completed'},
+  {id:'AP-504', patientId:'PT-1002', doctorId:'DR-203', date:'2026-07-08', time:'10:15', department:'Pediatrics', status:'Scheduled'},
+  {id:'AP-505', patientId:'PT-1003', doctorId:'DR-202', date:'2026-07-05', time:'16:30', department:'Orthopedics', status:'Cancelled'},
+];
+
+let invoices = [
+  {id:'INV-9001', patientId:'PT-1001', items:[{desc:'Room charges (3 nights)',amount:900},{desc:'ECG test',amount:150}], status:'Pending', date:'2026-07-04'},
+  {id:'INV-9002', patientId:'PT-1003', items:[{desc:'X-Ray',amount:220},{desc:'Cast application',amount:180},{desc:'Room charges (2 nights)',amount:600}], status:'Pending', date:'2026-07-05'},
+  {id:'INV-9003', patientId:'PT-1002', items:[{desc:'IV fluids',amount:90},{desc:'Consultation',amount:100}], status:'Paid', date:'2026-07-03'},
+  {id:'INV-9004', patientId:'PT-1006', items:[{desc:'Surgery fee',amount:2200},{desc:'Room charges (4 nights)',amount:1200}], status:'Paid', date:'2026-07-02'},
+  {id:'INV-9005', patientId:'PT-1005', items:[{desc:'Consultation',amount:120}], status:'Pending', date:'2026-07-06'},
+];
+
+let inventory = [
+  {id:'MED-01', name:'Paracetamol 500mg', category:'Analgesic', stock:420, reorder:150, unit:'tablets'},
+  {id:'MED-02', name:'Amoxicillin 250mg', category:'Antibiotic', stock:60, reorder:100, unit:'capsules'},
+  {id:'MED-03', name:'IV Saline 0.9%', category:'Fluids', stock:35, reorder:40, unit:'bags'},
+  {id:'MED-04', name:'Insulin (Regular)', category:'Hormone', stock:18, reorder:20, unit:'vials'},
+  {id:'MED-05', name:'Surgical Gloves (M)', category:'Consumable', stock:800, reorder:300, unit:'pairs'},
+  {id:'MED-06', name:'Gauze Rolls', category:'Consumable', stock:210, reorder:100, unit:'rolls'},
+  {id:'MED-07', name:'Morphine Sulfate', category:'Analgesic', stock:12, reorder:15, unit:'ampoules'},
+];
+
+/* ---------------- NAV ---------------- */
+const navItems = [
+  {key:'dashboard', label:'Dashboard', dot:'#8FB9A8'},
+  {key:'patients', label:'Patients', dot:'#1F6F6B'},
+  {key:'appointments', label:'Appointments', dot:'#C98A2C'},
+  {key:'doctors', label:'Doctors & Staff', dot:'#4E8CB0'},
+  {key:'beds', label:'Wards & Beds', dot:'#E1584B'},
+  {key:'billing', label:'Billing', dot:'#8F6FB9'},
+  {key:'inventory', label:'Pharmacy Stock', dot:'#6FA88F'},
+];
+let currentTab = 'dashboard';
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = navItems.map(n=>`
+    <div class="nav-item ${n.key===currentTab?'active':''}" style="--dot:${n.dot}" onclick="switchTab('${n.key}')">
+      <span class="dot" style="background:${n.dot}"></span>${n.label}
+    </div>`).join('');
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  renderNav();
+  renderMain();
+}
+
+/* ---------------- HELPERS ---------------- */
+const patientName = (id) => (patients.find(p=>p.id===id)||{}).name || '—';
+const doctorName = (id) => (doctors.find(d=>d.id===id)||{}).name || '—';
+const wardName = (id) => (wards.find(w=>w.id===id)||{}).name || '—';
+
+function statusBadge(status){
+  const map = {
+    'Available':'green','In Surgery':'amber','Off Duty':'gray',
+    'Scheduled':'green','Completed':'gray','Cancelled':'red',
+    'Paid':'green','Pending':'amber',
+    'occupied':'red','available':'green','cleaning':'amber'
+  };
+  return `<span class="badge ${map[status]||'gray'}">${status}</span>`;
+}
+
+function openModal(title, bodyHtml, onSubmit){
+  document.getElementById('modalContent').innerHTML = `
+    <h2>${title}</h2>
+    <form id="modalForm">${bodyHtml}
+      <div class="modal-actions">
+        <button type="button" class="btn ghost small" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn small">Save</button>
+      </div>
+    </form>`;
+  document.getElementById('modalBackdrop').classList.add('open');
+  document.getElementById('modalForm').onsubmit = (e)=>{ e.preventDefault(); onSubmit(new FormData(e.target)); closeModal(); };
+}
+function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); }
+
+/* ---------------- RENDER: DASHBOARD ---------------- */
+function renderDashboard(){
+  const totalPatients = patients.length;
+  const admitted = patients.filter(p=>p.admitted).length;
+  const availableBeds = beds.filter(b=>b.status==='available').length;
+  const todaysAppts = appointments.filter(a=>a.date==='2026-07-06').length;
+  const pendingRevenue = invoices.filter(i=>i.status==='Pending').reduce((s,i)=>s+i.items.reduce((a,it)=>a+it.amount,0),0);
+  const occupancyPct = Math.round((beds.filter(b=>b.status==='occupied').length / beds.length)*100);
+
+  return `
+    <div class="page-head">
+      <div><h1>Dashboard</h1><p>St. Aurelius General &middot; ${new Date('2026-07-06').toDateString()}</p></div>
+    </div>
+
+    <div class="vitals-strip">
+      <div class="vital-metric"><div class="v">${occupancyPct}%</div><div class="l">Bed Occupancy</div></div>
+      <div class="vitals-line-wrap">
+        <svg viewBox="0 0 600 40" preserveAspectRatio="none">
+          <polyline points="0,20 40,20 55,6 70,34 85,20 140,20 155,8 168,32 182,20 260,20 275,4 288,36 302,20 380,20 395,8 408,32 422,20 500,20 515,6 528,34 542,20 600,20 640,20 655,6 670,34 685,20 740,20 755,8 768,32 782,20 860,20 875,4 888,36 902,20 980,20 995,8 1008,32 1022,20 1100,20 1140,20 1155,6 1170,34 1185,20 1200,20"
+            fill="none" stroke="#59D6AE" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="vital-metric"><div class="v">${admitted}</div><div class="l">Admitted Now</div></div>
+      <div class="vital-metric"><div class="v">${todaysAppts}</div><div class="l">Appts Today</div></div>
+    </div>
+
+    <div class="grid stat-row">
+      <div class="card stat-card"><div class="label">Total Patients</div><div class="value">${totalPatients}</div><div class="sub">${admitted} currently admitted</div></div>
+      <div class="card stat-card"><div class="label">Available Beds</div><div class="value">${availableBeds} / ${beds.length}</div><div class="sub">across ${wards.length} wards</div></div>
+      <div class="card stat-card"><div class="label">On-Duty Doctors</div><div class="value">${doctors.filter(d=>d.status==='Available').length} / ${doctors.length}</div><div class="sub">available now</div></div>
+      <div class="card stat-card"><div class="label">Pending Revenue</div><div class="value">GH₵${pendingRevenue.toLocaleString()}</div><div class="sub">${invoices.filter(i=>i.status==='Pending').length} unpaid invoices</div></div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1.3fr 1fr;align-items:start;">
+      <div class="card">
+        <h3 style="margin-top:0;">Today's Appointments</h3>
+        <table>
+          <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Dept.</th><th>Status</th></tr>
+          ${appointments.filter(a=>a.date==='2026-07-06').map(a=>`
+            <tr><td class="mono">${a.time}</td><td>${patientName(a.patientId)}</td><td>${doctorName(a.doctorId)}</td><td>${a.department}</td><td>${statusBadge(a.status)}</td></tr>
+          `).join('') || `<tr><td colspan="5" style="color:var(--slate)">No appointments scheduled today.</td></tr>`}
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Low Stock Alerts</h3>
+        ${inventory.filter(i=>i.stock<=i.reorder).map(i=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #EDF1F0;font-size:13px;">
+            <span>${i.name}</span><span class="mono" style="color:var(--coral);">${i.stock} ${i.unit}</span>
+          </div>`).join('') || '<p style="color:var(--slate);font-size:13px;">All stock levels healthy.</p>'}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- RENDER: PATIENTS ---------------- */
+let patientSearch = '';
+function renderPatients(){
+  const filtered = patients.filter(p=>p.name.toLowerCase().includes(patientSearch.toLowerCase()) || p.id.toLowerCase().includes(patientSearch.toLowerCase()));
+  return `
+    <div class="page-head">
+      <div><h1>Patients</h1><p>${patients.length} total records</p></div>
+      <button class="btn" onclick="showAddPatient()">+ Admit / Register Patient</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="Search by name or ID..." value="${patientSearch}" oninput="patientSearch=this.value; renderMain();">
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <tr><th>ID</th><th>Name</th><th>Age/Gender</th><th>Condition</th><th>Doctor</th><th>Status</th><th>Bed</th></tr>
+        ${filtered.map(p=>`
+          <tr>
+            <td class="id-tag">${p.id}</td>
+            <td>${p.name}</td>
+            <td>${p.age} / ${p.gender}</td>
+            <td>${p.condition}</td>
+            <td>${doctorName(p.doctorId)}</td>
+            <td>${p.admitted? '<span class="badge red">Admitted</span>' : '<span class="badge gray">Outpatient</span>'}</td>
+            <td class="mono">${p.bedId || '—'}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="7"><div class="empty-state"><div class="display">No matching patients</div>Try a different search term.</div></td></tr>`}
+      </table>
+    </div>
+  `;
+}
+
+function showAddPatient(){
+  openModal('Register New Patient', `
+    <div class="field"><label>Full Name</label><input name="name" required></div>
+    <div class="field"><label>Age</label><input name="age" type="number" required></div>
+    <div class="field"><label>Gender</label><select name="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+    <div class="field"><label>Contact Number</label><input name="contact" required></div>
+    <div class="field"><label>Condition / Reason for Visit</label><input name="condition" required></div>
+    <div class="field"><label>Assign Doctor</label><select name="doctorId">${doctors.map(d=>`<option value="${d.id}">${d.name} — ${d.specialty}</option>`).join('')}</select></div>
+    <div class="field"><label>Admit to Ward?</label><select name="admit"><option value="no">No — Outpatient</option><option value="yes">Yes — Admit</option></select></div>
+  `, (data)=>{
+    const id = 'PT-' + (nextId(0));
+    const admit = data.get('admit')==='yes';
+    let wardId=null, bedId=null;
+    if(admit){
+      const freeBed = beds.find(b=>b.status==='available');
+      if(freeBed){ wardId=freeBed.wardId; bedId=freeBed.id; freeBed.status='occupied'; freeBed.patientId=id; }
+    }
+    patients.push({id, name:data.get('name'), age:+data.get('age'), gender:data.get('gender'), contact:data.get('contact'), condition:data.get('condition'), admitted:admit && !!bedId, wardId, bedId, doctorId:data.get('doctorId')});
+    renderMain();
+  });
+}
+
+/* ---------------- RENDER: APPOINTMENTS ---------------- */
+let apptFilter = 'All';
+function renderAppointments(){
+  const filtered = appointments.filter(a=>apptFilter==='All' || a.status===apptFilter);
+  return `
+    <div class="page-head">
+      <div><h1>Appointments</h1><p>${appointments.length} total bookings</p></div>
+      <button class="btn" onclick="showAddAppointment()">+ Book Appointment</button>
+    </div>
+    <div class="tabs-row">
+      ${['All','Scheduled','Completed','Cancelled'].map(s=>`<div class="tab-pill ${apptFilter===s?'active':''}" onclick="apptFilter='${s}';renderMain();">${s}</div>`).join('')}
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <tr><th>ID</th><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Dept.</th><th>Status</th><th></th></tr>
+        ${filtered.map(a=>`
+          <tr>
+            <td class="id-tag">${a.id}</td>
+            <td class="mono">${a.date}</td>
+            <td class="mono">${a.time}</td>
+            <td>${patientName(a.patientId)}</td>
+            <td>${doctorName(a.doctorId)}</td>
+            <td>${a.department}</td>
+            <td>${statusBadge(a.status)}</td>
+            <td>${a.status==='Scheduled' ? `<button class="btn ghost small" onclick="markApptDone('${a.id}')">Complete</button>` : ''}</td>
+          </tr>
+        `).join('') || `<tr><td colspan="8"><div class="empty-state"><div class="display">No appointments here</div>Try another filter.</div></td></tr>`}
+      </table>
+    </div>
+  `;
+}
+function markApptDone(id){ const a = appointments.find(x=>x.id===id); a.status='Completed'; renderMain(); }
+
+function showAddAppointment(){
+  openModal('Book Appointment', `
+    <div class="field"><label>Patient</label><select name="patientId">${patients.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+    <div class="field"><label>Doctor</label><select name="doctorId">${doctors.map(d=>`<option value="${d.id}" data-dept="${d.department}">${d.name} — ${d.department}</option>`).join('')}</select></div>
+    <div class="field"><label>Date</label><input name="date" type="date" required value="2026-07-07"></div>
+    <div class="field"><label>Time</label><input name="time" type="time" required value="10:00"></div>
+  `, (data)=>{
+    const doc = doctors.find(d=>d.id===data.get('doctorId'));
+    appointments.push({id:'AP-'+nextId(0), patientId:data.get('patientId'), doctorId:data.get('doctorId'), date:data.get('date'), time:data.get('time'), department:doc.department, status:'Scheduled'});
+    renderMain();
+  });
+}
+
+/* ---------------- RENDER: DOCTORS ---------------- */
+function renderDoctors(){
+  return `
+    <div class="page-head">
+      <div><h1>Doctors & Staff</h1><p>${doctors.length} staff on record</p></div>
+      <button class="btn" onclick="showAddDoctor()">+ Add Staff Member</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Department</th><th>Status</th></tr>
+        ${doctors.map(d=>`
+          <tr>
+            <td class="id-tag">${d.id}</td>
+            <td>${d.name}</td>
+            <td>${d.specialty}</td>
+            <td>${d.department}</td>
+            <td>
+              <select onchange="updateDoctorStatus('${d.id}', this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;">
+                ${['Available','In Surgery','Off Duty'].map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
+              </select>
+            </td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+  `;
+}
+function updateDoctorStatus(id, status){ doctors.find(d=>d.id===id).status = status; renderMain(); }
+function showAddDoctor(){
+  openModal('Add Staff Member', `
+    <div class="field"><label>Full Name</label><input name="name" required placeholder="Dr. ..."></div>
+    <div class="field"><label>Specialty</label><input name="specialty" required></div>
+    <div class="field"><label>Department</label><select name="department">${departments.map(d=>`<option>${d}</option>`).join('')}</select></div>
+  `, (data)=>{
+    doctors.push({id:'DR-'+nextId(0), name:data.get('name'), specialty:data.get('specialty'), department:data.get('department'), status:'Available'});
+    renderMain();
+  });
+}
+
+/* ---------------- RENDER: BEDS ---------------- */
+function renderBeds(){
+  return `
+    <div class="page-head">
+      <div><h1>Wards & Beds</h1><p>${beds.filter(b=>b.status==='occupied').length} of ${beds.length} beds occupied</p></div>
+    </div>
+    <div class="wards-grid">
+      ${wards.map(w=>{
+        const wardBeds = beds.filter(b=>b.wardId===w.id);
+        const occ = wardBeds.filter(b=>b.status==='occupied').length;
+        return `
+        <div class="card ward-card">
+          <h3 style="color:${w.color}">${w.name}</h3>
+          <div class="ward-sub">${occ}/${wardBeds.length} occupied &middot; ${w.type}</div>
+          <div class="beds-grid">
+            ${wardBeds.map(b=>`
+              <div class="bed ${b.status}" title="${b.id}${b.patientId? ' — '+patientName(b.patientId):''}" onclick="toggleBed('${b.id}')">${b.number}</div>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <p style="color:var(--slate);font-size:12px;margin-top:16px;">Click a bed to cycle its status (available → cleaning → available). Occupied beds are freed when a patient is discharged from the Patients tab.</p>
+  `;
+}
+function toggleBed(id){
+  const b = beds.find(x=>x.id===id);
+  if(b.status==='occupied') return; // must discharge via patient record
+  b.status = b.status==='available' ? 'cleaning' : 'available';
+  renderMain();
+}
+
+/* ---------------- RENDER: BILLING ---------------- */
+function renderBilling(){
+  const totalPending = invoices.filter(i=>i.status==='Pending').reduce((s,i)=>s+i.items.reduce((a,it)=>a+it.amount,0),0);
+  return `
+    <div class="page-head">
+      <div><h1>Billing</h1><p>GH₵${totalPending.toLocaleString()} pending across ${invoices.filter(i=>i.status==='Pending').length} invoices</p></div>
+      <button class="btn" onclick="showAddInvoice()">+ New Invoice</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr>
+        ${invoices.map(inv=>{
+          const total = inv.items.reduce((s,it)=>s+it.amount,0);
+          return `
+          <tr>
+            <td class="id-tag">${inv.id}</td>
+            <td>${patientName(inv.patientId)}</td>
+            <td class="mono">${inv.date}</td>
+            <td style="font-size:12px;color:var(--slate);">${inv.items.map(it=>it.desc).join(', ')}</td>
+            <td class="mono">GH₵${total.toLocaleString()}</td>
+            <td>${statusBadge(inv.status)}</td>
+            <td>${inv.status==='Pending' ? `<button class="btn ghost small" onclick="markPaid('${inv.id}')">Mark Paid</button>` : ''}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>
+  `;
+}
+function markPaid(id){ invoices.find(i=>i.id===id).status='Paid'; renderMain(); }
+function showAddInvoice(){
+  openModal('Create Invoice', `
+    <div class="field"><label>Patient</label><select name="patientId">${patients.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+    <div class="field"><label>Item Description</label><input name="desc" required placeholder="e.g. Consultation fee"></div>
+    <div class="field"><label>Amount (GH₵)</label><input name="amount" type="number" required></div>
+  `, (data)=>{
+    invoices.push({id:'INV-'+nextId(0), patientId:data.get('patientId'), items:[{desc:data.get('desc'), amount:+data.get('amount')}], status:'Pending', date:'2026-07-06'});
+    renderMain();
+  });
+}
+
+/* ---------------- RENDER: INVENTORY ---------------- */
+let invSearch = '';
+function renderInventory(){
+  const filtered = inventory.filter(i=>i.name.toLowerCase().includes(invSearch.toLowerCase()));
+  return `
+    <div class="page-head">
+      <div><h1>Pharmacy Stock</h1><p>${inventory.filter(i=>i.stock<=i.reorder).length} items below reorder level</p></div>
+      <button class="btn" onclick="showAddStock()">+ Add Item</button>
+    </div>
+    <div class="toolbar"><input type="text" placeholder="Search inventory..." value="${invSearch}" oninput="invSearch=this.value;renderMain();"></div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <tr><th>ID</th><th>Item</th><th>Category</th><th>Stock</th><th>Reorder Level</th><th>Status</th><th></th></tr>
+        ${filtered.map(i=>`
+          <tr>
+            <td class="id-tag">${i.id}</td>
+            <td>${i.name}</td>
+            <td>${i.category}</td>
+            <td class="mono">${i.stock} ${i.unit}</td>
+            <td class="mono">${i.reorder} ${i.unit}</td>
+            <td>${i.stock<=i.reorder? '<span class="badge red">Low Stock</span>' : '<span class="badge green">Healthy</span>'}</td>
+            <td><button class="btn ghost small" onclick="restock('${i.id}')">+50 Restock</button></td>
+          </tr>
+        `).join('') || `<tr><td colspan="7"><div class="empty-state"><div class="display">No matching items</div></div></td></tr>`}
+      </table>
+    </div>
+  `;
+}
+function restock(id){ inventory.find(i=>i.id===id).stock += 50; renderMain(); }
+function showAddStock(){
+  openModal('Add Inventory Item', `
+    <div class="field"><label>Item Name</label><input name="name" required></div>
+    <div class="field"><label>Category</label><input name="category" required></div>
+    <div class="field"><label>Initial Stock</label><input name="stock" type="number" required></div>
+    <div class="field"><label>Reorder Level</label><input name="reorder" type="number" required></div>
+    <div class="field"><label>Unit</label><input name="unit" required placeholder="e.g. tablets, vials"></div>
+  `, (data)=>{
+    inventory.push({id:'MED-'+nextId(0), name:data.get('name'), category:data.get('category'), stock:+data.get('stock'), reorder:+data.get('reorder'), unit:data.get('unit')});
+    renderMain();
+  });
+}
+
+/* ---------------- MAIN RENDER ROUTER ---------------- */
+function renderMain(){
+  const map = {
+    dashboard: renderDashboard, patients: renderPatients, appointments: renderAppointments,
+    doctors: renderDoctors, beds: renderBeds, billing: renderBilling, inventory: renderInventory
+  };
+  document.getElementById('main').innerHTML = map[currentTab]();
+}
+
+renderNav();
+renderMain();
+</script>
+</body>
+</html>
